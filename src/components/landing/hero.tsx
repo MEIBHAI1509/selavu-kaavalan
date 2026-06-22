@@ -19,7 +19,7 @@ export default function Hero() {
             🇮🇳 Tamil Personal Finance Platform
           </span>
 
-          <h1 className="mt-8 bg-gradient-to-r from-emerald-400 to-cyan-400 bg-clip-text text-6xl font-bold text-transparent md:text-8xl">
+          <h1 className="mt-8 bg-linear-to-r from-emerald-400 to-cyan-400 bg-clip-text text-6xl font-bold text-transparent md:text-8xl">
             செலவுக் காவலன்
           </h1>
 

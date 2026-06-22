@@ -1,3 +1,7 @@
-export default function Page() {
-    return <div>Coming Soon</div>;
-  }
+export default function LoginPage() {
+  return (
+    <div className="flex min-h-screen items-center justify-center">
+      Login Page
+    </div>
+  );
+}

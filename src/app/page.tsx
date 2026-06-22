@@ -4,6 +4,7 @@ import Features from "@/components/landing/features";
 import Stats from "@/components/landing/stats";
 import CTA from "@/components/landing/cta";
 import Footer from "@/components/landing/footer";
+import DashboardPreview from "@/components/landing/dashboard-preview";
 
 export default function HomePage() {
   return (
@@ -12,6 +13,7 @@ export default function HomePage() {
       <Hero />
       <Features />
       <Stats />
+      <DashboardPreview />
       <CTA />
       <Footer />
     </main>

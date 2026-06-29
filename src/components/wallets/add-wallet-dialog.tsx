@@ -2,28 +2,56 @@
 
 import { useState } from "react";
 
+import { useForm } from "react-hook-form";
+
+import { SubmitHandler } from "react-hook-form";
+
+import { zodResolver } from "@hookform/resolvers/zod";
+
+import {
+  walletSchema,
+  type WalletFormInput,
+  type WalletFormValues,
+} from "@/lib/validations/wallet.schema";
+
+import { walletService } from "@/services/wallet.service";
+
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-  } from "@/components/ui/select";
 
-import { walletService } from "@/services/wallet.service";
+import { Form } from "@/components/ui/form";
+
+import { FormInput } from "@/components/forms/form-input";
+
+import { FormSelect } from "@/components/forms/form-select";
+
+import { SubmitButton } from "@/components/forms/submit-button";
 
 const walletTypes = [
-  "Cash",
-  "Bank",
-  "UPI",
-  "Credit Card",
-  "Savings",
+  {
+    label: "Cash",
+    value: "Cash",
+  },
+  {
+    label: "Bank",
+    value: "Bank",
+  },
+  {
+    label: "UPI",
+    value: "UPI",
+  },
+  {
+    label: "Credit Card",
+    value: "Credit Card",
+  },
+  {
+    label: "Savings",
+    value: "Savings",
+  },
 ];
 
 interface Props {
@@ -43,93 +71,101 @@ export default function AddWalletDialog({
   userId,
   onSuccess,
 }: Props) {
-  const [name, setName] =
-    useState("");
+  const [loading, setLoading] =
+    useState(false);
 
-  const [type, setType] =
-    useState("Cash");
+    const form = useForm<
+    WalletFormInput,
+    undefined,
+    WalletFormValues
+  >({
+    resolver: zodResolver(walletSchema),
+  
+    defaultValues: {
+      name: "",
+      type: "Cash",
+      balance: 0,
+    },
+  });
 
-  const [balance, setBalance] =
-    useState("");
-
-  async function handleSubmit() {
-    await walletService.createWallet({
-      user_id: userId,
-      name,
-      type,
-      balance: Number(balance),
-      color: null,
-      icon: null,
-      is_default: false,
-    });
-
-    onSuccess();
-
-    onOpenChange(false);
-
-    setName("");
-    setBalance("");
-  }
+  const onSubmit: SubmitHandler<WalletFormValues> = async (
+    values
+  ) => {
+    try {
+      setLoading(true);
+  
+      const { error } =
+        await walletService.createWallet({
+          user_id: userId,
+          name: values.name,
+          type: values.type,
+          balance: values.balance,
+          color: null,
+          icon: null,
+          is_default: false,
+        });
+  
+      if (error) throw error;
+  
+      form.reset();
+  
+      onSuccess();
+  
+      onOpenChange(false);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <Dialog
       open={open}
       onOpenChange={onOpenChange}
     >
-      <DialogContent>
+      <DialogContent className="sm:max-w-lg">
         <DialogHeader>
-          <DialogTitle>
+          <DialogTitle className="text-2xl font-bold">
             Add Wallet
           </DialogTitle>
         </DialogHeader>
 
-        <div className="space-y-4">
-          <input
-            className="w-full rounded-lg border p-3"
-            placeholder="Wallet Name"
-            value={name}
-            onChange={(e) =>
-              setName(e.target.value)
-            }
-          />
-
-<Select
-  value={type}
-  onValueChange={setType}
->
-  <SelectTrigger>
-    <SelectValue />
-  </SelectTrigger>
-
-  <SelectContent>
-    {walletTypes.map((walletType) => (
-      <SelectItem
-        key={walletType}
-        value={walletType}
-      >
-        {walletType}
-      </SelectItem>
-    ))}
-  </SelectContent>
-</Select>
-
-          <input
-            type="number"
-            className="w-full rounded-lg border p-3"
-            placeholder="Opening Balance"
-            value={balance}
-            onChange={(e) =>
-              setBalance(e.target.value)
-            }
-          />
-
-          <button
-            onClick={handleSubmit}
-            className="w-full rounded-lg bg-primary py-3 text-primary-foreground"
+        <Form {...form}>
+          <form
+            onSubmit={form.handleSubmit(
+              onSubmit
+            )}
+            className="space-y-6"
           >
-            Create Wallet
-          </button>
-        </div>
+            <FormInput
+              control={form.control}
+              name="name"
+              label="Wallet Name"
+              placeholder="Enter wallet name"
+            />
+
+            <FormSelect
+              control={form.control}
+              name="type"
+              label="Wallet Type"
+              placeholder="Select wallet type"
+              options={walletTypes}
+            />
+
+            <FormInput
+              control={form.control}
+              name="balance"
+              label="Opening Balance"
+              placeholder="0"
+              type="number"
+            />
+
+            <SubmitButton
+              loading={loading}
+            >
+              Create Wallet
+            </SubmitButton>
+          </form>
+        </Form>
       </DialogContent>
     </Dialog>
   );

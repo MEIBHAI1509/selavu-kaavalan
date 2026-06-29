@@ -1,5 +1,4 @@
 import { supabase } from "@/lib/supabase/client";
-import { Category } from "@/types/category";
 
 export const categoryService = {
   async getCategories(userId: string) {
@@ -12,14 +11,29 @@ export const categoryService = {
       });
   },
 
-  async createCategory(
-    category: Omit<Category, "id" | "created_at">
+  async createCategory(payload: {
+    user_id: string;
+    name: string;
+    icon: string;
+    color: string;
+  }) {
+    return supabase
+      .from("categories")
+      .insert(payload);
+  },
+
+  async updateCategory(
+    id: string,
+    payload: {
+      name: string;
+      icon: string;
+      color: string;
+    }
   ) {
     return supabase
       .from("categories")
-      .insert(category)
-      .select()
-      .single();
+      .update(payload)
+      .eq("id", id);
   },
 
   async deleteCategory(id: string) {

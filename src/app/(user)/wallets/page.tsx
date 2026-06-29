@@ -6,11 +6,14 @@ import { Wallet as WalletIcon } from "lucide-react";
 import WalletCard from "@/components/wallets/wallet-card";
 import AddWalletDialog from "@/components/wallets/add-wallet-dialog";
 
+import type { Wallet } from "@/types/wallet";
+
 import { useWallets } from "@/hooks/use-wallets";
 import { useUser } from "@/hooks/use-user";
 
 import { walletService } from "@/services/wallet.service";
 import DeleteWalletDialog from "@/components/wallets/delete-wallet-dialog";
+import EditWalletDialog from "@/components/wallets/edit-wallet-dialog";
 
 export default function WalletsPage() {
   const user = useUser();
@@ -27,6 +30,12 @@ export default function WalletsPage() {
     loading,
     refetch,
   } = useWallets(user?.id);
+
+  const [editingWallet, setEditingWallet] =
+  useState<Wallet | null>(null);
+
+const [editOpen, setEditOpen] =
+  useState(false);
 
 //   async function handleDelete(id: string) {
 //     const confirmed = window.confirm(
@@ -51,12 +60,17 @@ async function confirmDelete() {
     setWalletToDelete(null);
   }
 
-  if (!user) {
-    return <div>Loading user...</div>;
-  }
-
-  if (loading) {
-    return <div>Loading wallets...</div>;
+  if (!user || loading) {
+    return (
+      <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
+        {Array.from({ length: 3 }).map((_, index) => (
+          <div
+            key={index}
+            className="h-48 animate-pulse rounded-3xl bg-card"
+          />
+        ))}
+      </div>
+    );
   }
 
   return (
@@ -75,30 +89,42 @@ async function confirmDelete() {
       </div>
 
       {wallets.length === 0 ? (
-        <div className="rounded-3xl border border-dashed border-border p-12 text-center">
-          <WalletIcon className="mx-auto mb-4 h-12 w-12 text-muted-foreground" />
+        <div className="rounded-3xl border border-dashed border-primary/30 bg-card p-16 text-center">
+          <div className="mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-full bg-primary/10">
+  <WalletIcon className="h-10 w-10 text-primary" />
+</div>
 
-          <h2 className="text-xl font-semibold">
+          <h2 className="text-xl font-bold">
             Create Your First Wallet
           </h2>
 
-          <p className="mt-2 text-muted-foreground">
+          <p className="mx-auto mt-3 max-w-md text-muted-foreground">
             Start tracking your money by adding a wallet.
           </p>
+          <button
+  onClick={() => setOpen(true)}
+  className="mt-8 rounded-xl bg-primary px-6 py-3 font-semibold text-primary-foreground transition hover:scale-105"
+>
+  Create Wallet
+</button>
         </div>
       ) : (
         <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
           {wallets.map((wallet) => (
             <WalletCard
-              key={wallet.id}
-              wallet={wallet}
-              onDelete={(id, name) =>
-                setWalletToDelete({
-                  id,
-                  name,
-                })
-              }
-            />
+            key={wallet.id}
+            wallet={wallet}
+            onDelete={(id, name) =>
+              setWalletToDelete({
+                id,
+                name,
+              })
+            }
+            onEdit={() => {
+              setEditingWallet(wallet);
+              setEditOpen(true);
+            }}
+          />
           ))}
         </div>
       )}
@@ -119,6 +145,15 @@ async function confirmDelete() {
     }
   }}
   onConfirm={confirmDelete}
+/>
+<EditWalletDialog
+  open={editOpen}
+  onOpenChange={setEditOpen}
+  wallet={editingWallet}
+  onSuccess={async () => {
+    await refetch();
+    setEditOpen(false);
+  }}
 />
     </div>
   );

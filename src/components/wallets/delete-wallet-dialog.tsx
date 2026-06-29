@@ -82,7 +82,7 @@ export default function DeleteWalletDialog({
 
             <button
               onClick={onConfirm}
-              className="flex-1 rounded-xl bg-gradient-to-r from-red-500 to-red-600 px-4 py-3 font-medium text-white shadow-lg shadow-red-500/20 transition hover:scale-[1.02]"
+              className="flex-1 rounded-xl bg-linear-to-r from-red-500 to-red-600 px-4 py-3 font-medium text-white shadow-lg shadow-red-500/20 transition hover:scale-[1.02]"
             >
               Delete Wallet
             </button>

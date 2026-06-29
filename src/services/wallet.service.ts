@@ -22,6 +22,24 @@ export const walletService = {
       .single();
   },
 
+  async updateWallet(
+    id: string,
+    payload: {
+      name: string;
+      type: string;
+      balance: number;
+    }
+  ) {
+    return supabase
+      .from("wallets")
+      .update({
+        name: payload.name,
+        type: payload.type,
+        balance: payload.balance,
+      })
+      .eq("id", id);
+  },
+
   async deleteWallet(id: string) {
     return supabase
       .from("wallets")

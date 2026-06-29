@@ -33,10 +33,36 @@ export const expenseService = {
     });
   },
 
+  async updateExpense(
+    id: string,
+    payload: {
+      wallet_id: string;
+      category_id: string;
+      amount: number;
+      note?: string;
+      expense_date: string;
+    }
+  ) {
+    return supabase.rpc(
+      "update_expense",
+      {
+        p_expense_id: id,
+        p_wallet_id: payload.wallet_id,
+        p_category_id: payload.category_id,
+        p_amount: payload.amount,
+        p_note: payload.note ?? null,
+        p_expense_date:
+          payload.expense_date,
+      }
+    );
+  },
+
   async deleteExpense(id: string) {
-    return supabase
-      .from("expenses")
-      .delete()
-      .eq("id", id);
+    return supabase.rpc(
+      "delete_expense",
+      {
+        p_expense_id: id,
+      }
+    );
   },
 };

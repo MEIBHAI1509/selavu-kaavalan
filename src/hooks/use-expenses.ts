@@ -1,20 +1,27 @@
 "use client";
 
-import { useCallback, useState } from "react";
+import {
+  useCallback,
+  useState,
+} from "react";
 
 import { Expense } from "@/types/expense";
 import { expenseService } from "@/services/expense.service";
 
 export function useExpenses(userId?: string) {
   const [expenses, setExpenses] = useState<Expense[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
 
   const fetchExpenses = useCallback(async () => {
-    if (!userId) return;
+    if (!userId) {
+      setExpenses([]);
+      setLoading(false);
+      return;
+    }
+
+    setLoading(true);
 
     try {
-      setLoading(true);
-
       const { data, error } =
         await expenseService.getExpenses(userId);
 

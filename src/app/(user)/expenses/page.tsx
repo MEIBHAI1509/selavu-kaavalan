@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 import { Plus, Receipt } from "lucide-react";
 
 import { useUser } from "@/hooks/use-user";
@@ -9,11 +9,35 @@ import { useWallets } from "@/hooks/use-wallets";
 import { useCategories } from "@/hooks/use-categories";
 
 import AddExpenseDialog from "@/components/expenses/add-expense-dialog";
+import type { Expense } from "@/types/expense";
+
+import ExpenseTable from "@/components/expenses/expense-table";
+import ExpenseFilters from "@/components/expenses/expense-filters";
+import EditExpenseDialog from "@/components/expenses/edit-expense-dialog";
+import DeleteExpenseDialog from "@/components/expenses/delete-expense-dialog";
+import { expenseService } from "@/services/expense.service";
 
 export default function ExpensesPage() {
   const user = useUser();
 
   const [open, setOpen] = useState(false);
+  const [search, setSearch] =
+  useState("");
+
+const [walletFilter, setWalletFilter] =
+  useState("all");
+
+const [categoryFilter, setCategoryFilter] =
+  useState("all");
+
+const [editingExpense, setEditingExpense] =
+  useState<Expense | null>(null);
+
+const [editOpen, setEditOpen] =
+  useState(false);
+
+const [deletingExpense, setDeletingExpense] =
+  useState<Expense | null>(null);
 
   const {
     expenses,
@@ -30,10 +54,48 @@ export default function ExpensesPage() {
   } = useCategories(user?.id);
 
   useEffect(() => {
-    if (user?.id) {
+    if (!user?.id) return;
+  
+    const id = requestAnimationFrame(() => {
       void refetch();
-    }
+    });
+  
+    return () => cancelAnimationFrame(id);
   }, [user?.id, refetch]);
+
+  const filteredExpenses = useMemo(() => {
+    return expenses.filter((expense) => {
+      const matchesSearch =
+        search === "" ||
+        expense.note
+          ?.toLowerCase()
+          .includes(search.toLowerCase()) ||
+        expense.categories?.name
+          ?.toLowerCase()
+          .includes(search.toLowerCase());
+  
+      const matchesWallet =
+        walletFilter === "all" ||
+        expense.wallet_id === walletFilter;
+  
+      const matchesCategory =
+        categoryFilter === "all" ||
+        expense.category_id === categoryFilter;
+  
+      return (
+        matchesSearch &&
+        matchesWallet &&
+        matchesCategory
+      );
+    });
+  }, [
+    expenses,
+    search,
+    walletFilter,
+    categoryFilter,
+  ]);
+
+  
 
   if (!user) {
     return (
@@ -150,48 +212,30 @@ export default function ExpensesPage() {
       {!loading &&
         expenses.length > 0 && (
           <div className="space-y-4">
-            {expenses.map(
-              (expense) => (
-                <div
-                  key={expense.id}
-                  className="rounded-2xl border bg-card p-4"
-                >
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <h3 className="font-semibold">
-                        ₹
-                        {Number(
-                          expense.amount
-                        ).toLocaleString()}
-                      </h3>
+            <>
+  <ExpenseFilters
+    search={search}
+    onSearchChange={setSearch}
+    wallets={wallets}
+    categories={categories}
+    walletFilter={walletFilter}
+    categoryFilter={categoryFilter}
+    onWalletChange={setWalletFilter}
+    onCategoryChange={setCategoryFilter}
+  />
 
-                      <p className="text-sm text-muted-foreground">
-                        {expense.note ||
-                          "No note"}
-                      </p>
-                    </div>
-
-                    <div className="text-right">
-                      <p className="text-sm">
-                        {
-                          expense
-                            .categories
-                            ?.name
-                        }
-                      </p>
-
-                      <p className="text-xs text-muted-foreground">
-                        {
-                          expense
-                            .wallets
-                            ?.name
-                        }
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              )
-            )}
+<ExpenseTable
+  expenses={filteredExpenses}
+  loading={loading}
+  onEdit={(expense) => {
+    setEditingExpense(expense);
+    setEditOpen(true);
+  }}
+  onDelete={(expense) => {
+    setDeletingExpense(expense);
+  }}
+/>
+</>
           </div>
         )}
 
@@ -203,6 +247,42 @@ export default function ExpensesPage() {
         categories={categories}
         onSuccess={refetch}
       />
+      <EditExpenseDialog
+  open={editOpen}
+  onOpenChange={setEditOpen}
+  expense={editingExpense}
+  wallets={wallets}
+  categories={categories}
+  onSuccess={refetch}
+/>
+
+<DeleteExpenseDialog
+  open={!!deletingExpense}
+  expense={deletingExpense}
+  loading={loading}
+  onOpenChange={(open) => {
+    if (!open) {
+      setDeletingExpense(null);
+    }
+  }}
+  onConfirm={async () => {
+    if (!deletingExpense) return;
+
+    const { error } =
+      await expenseService.deleteExpense(
+        deletingExpense.id
+      );
+
+    if (error) {
+      console.error(error);
+      return;
+    }
+
+    await refetch();
+
+    setDeletingExpense(null);
+  }}
+/>
     </div>
   );
 }

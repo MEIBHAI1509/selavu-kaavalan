@@ -1,6 +1,9 @@
 "use client";
 
-import { Search, X } from "lucide-react";
+import { Search } from "lucide-react";
+
+import type { Wallet } from "@/types/wallet";
+import type { Category } from "@/types/category";
 
 import {
   Select,
@@ -10,48 +13,36 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 
-import { Wallet } from "@/types/wallet";
-import { Category } from "@/types/category";
-
-interface ExpenseFiltersProps {
+interface Props {
   search: string;
   onSearchChange: (value: string) => void;
-
-  wallet: string;
-  onWalletChange: (value: string) => void;
-
-  category: string;
-  onCategoryChange: (value: string) => void;
-
-  date: string;
-  onDateChange: (value: string) => void;
 
   wallets: Wallet[];
   categories: Category[];
 
-  onClear: () => void;
+  walletFilter: string;
+  categoryFilter: string;
+
+  onWalletChange: (value: string) => void;
+  onCategoryChange: (value: string) => void;
 }
 
 export default function ExpenseFilters({
   search,
   onSearchChange,
-  wallet,
-  onWalletChange,
-  category,
-  onCategoryChange,
-  date,
-  onDateChange,
   wallets,
   categories,
-  onClear,
-}: ExpenseFiltersProps) {
+  walletFilter,
+  categoryFilter,
+  onWalletChange,
+  onCategoryChange,
+}: Props) {
   return (
-    <div className="mb-8 rounded-3xl border border-border bg-card p-5">
-      <div className="grid gap-4 lg:grid-cols-5">
+    <div className="mb-6 rounded-3xl border border-border bg-card p-6">
+      <div className="grid gap-4 lg:grid-cols-3">
         {/* Search */}
-
-        <div className="relative lg:col-span-2">
-          <Search className="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+        <div className="relative">
+          <Search className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-muted-foreground" />
 
           <input
             value={search}
@@ -59,14 +50,13 @@ export default function ExpenseFilters({
               onSearchChange(e.target.value)
             }
             placeholder="Search expenses..."
-            className="h-11 w-full rounded-xl border border-border bg-background pl-11 pr-4 outline-none transition focus:border-primary"
+            className="w-full rounded-xl border border-border bg-background py-3 pl-12 pr-4 outline-none transition focus:border-primary"
           />
         </div>
 
         {/* Wallet */}
-
         <Select
-          value={wallet}
+          value={walletFilter}
           onValueChange={onWalletChange}
         >
           <SelectTrigger>
@@ -90,9 +80,8 @@ export default function ExpenseFilters({
         </Select>
 
         {/* Category */}
-
         <Select
-          value={category}
+          value={categoryFilter}
           onValueChange={onCategoryChange}
         >
           <SelectTrigger>
@@ -114,50 +103,6 @@ export default function ExpenseFilters({
             ))}
           </SelectContent>
         </Select>
-
-        {/* Date */}
-
-        <Select
-          value={date}
-          onValueChange={onDateChange}
-        >
-          <SelectTrigger>
-            <SelectValue />
-          </SelectTrigger>
-
-          <SelectContent>
-            <SelectItem value="all">
-              All Time
-            </SelectItem>
-
-            <SelectItem value="today">
-              Today
-            </SelectItem>
-
-            <SelectItem value="week">
-              This Week
-            </SelectItem>
-
-            <SelectItem value="month">
-              This Month
-            </SelectItem>
-
-            <SelectItem value="year">
-              This Year
-            </SelectItem>
-          </SelectContent>
-        </Select>
-      </div>
-
-      <div className="mt-5 flex justify-end">
-        <button
-          onClick={onClear}
-          className="inline-flex items-center gap-2 rounded-xl border border-border px-4 py-2 transition hover:bg-muted"
-        >
-          <X className="h-4 w-4" />
-
-          Clear Filters
-        </button>
       </div>
     </div>
   );

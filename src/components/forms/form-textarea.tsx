@@ -16,19 +16,25 @@ import {
 
 import { Textarea } from "@/components/ui/textarea";
 
-interface Props<T extends FieldValues> {
-  control: Control<T>;
-  name: FieldPath<T>;
+interface Props<
+  TFieldValues extends FieldValues,
+> {
+  control: Control<TFieldValues>;
+  name: FieldPath<TFieldValues>;
   label: string;
   placeholder?: string;
+  rows?: number;
 }
 
-export function FormTextarea<T extends FieldValues>({
+export function FormTextarea<
+  TFieldValues extends FieldValues,
+>({
   control,
   name,
   label,
   placeholder,
-}: Props<T>) {
+  rows = 4,
+}: Props<TFieldValues>) {
   return (
     <FormField
       control={control}
@@ -40,6 +46,8 @@ export function FormTextarea<T extends FieldValues>({
           <FormControl>
             <Textarea
               {...field}
+              value={field.value ?? ""}
+              rows={rows}
               placeholder={placeholder}
             />
           </FormControl>

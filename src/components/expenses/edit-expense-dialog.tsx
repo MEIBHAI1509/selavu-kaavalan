@@ -3,41 +3,46 @@
 import { useEffect, useState } from "react";
 
 import {
+  useForm,
+  type SubmitHandler,
+} from "react-hook-form";
+
+import { zodResolver } from "@hookform/resolvers/zod";
+
+import type { Wallet } from "@/types/wallet";
+import type { Category } from "@/types/category";
+import type { Expense } from "@/types/expense";
+
+import {
+  expenseSchema,
+  type ExpenseFormValues,
+} from "@/lib/validations/expense.schema";
+
+import { expenseService } from "@/services/expense.service";
+
+import ExpenseForm from "@/components/forms/expense-form";
+
+import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
 
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { Form } from "@/components/ui/form";
 
-import { Wallet } from "@/types/wallet";
-import { Category } from "@/types/category";
-import { Expense } from "@/types/expense";
+import { SubmitButton } from "@/components/forms/submit-button";
 
-interface EditExpenseDialogProps {
+interface Props {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+
   expense: Expense | null;
 
   wallets: Wallet[];
   categories: Category[];
 
-  loading?: boolean;
-
-  onSave: (payload: {
-    wallet_id: string;
-    category_id: string;
-    amount: number;
-    note: string;
-    expense_date: string;
-  }) => Promise<void>;
+  onSuccess: () => void;
 }
 
 export default function EditExpenseDialog({
@@ -46,185 +51,120 @@ export default function EditExpenseDialog({
   expense,
   wallets,
   categories,
-  loading = false,
-  onSave,
-}: EditExpenseDialogProps) {
-  const [amount, setAmount] = useState("");
-  const [walletId, setWalletId] = useState("");
-  const [categoryId, setCategoryId] = useState("");
-  const [note, setNote] = useState("");
-  const [expenseDate, setExpenseDate] = useState("");
+  onSuccess,
+}: Props) {
+  const [loading, setLoading] =
+    useState(false);
+
+  const form =
+    useForm<ExpenseFormValues>({
+      resolver:
+        zodResolver(expenseSchema),
+
+      defaultValues: {
+        wallet_id: "",
+        category_id: "",
+        amount: 0,
+        note: "",
+        expense_date: "",
+      },
+    });
 
   useEffect(() => {
     if (!expense) return;
 
-    setAmount(String(expense.amount));
-    setWalletId(expense.wallet_id);
-    setCategoryId(expense.category_id);
-    setNote(expense.note ?? "");
-    setExpenseDate(expense.expense_date);
-  }, [expense]);
-
-  if (!expense) return null;
-
-  async function handleSave() {
-    await onSave({
-      wallet_id: walletId,
-      category_id: categoryId,
-      amount: Number(amount),
-      note,
-      expense_date: expenseDate,
+    form.reset({
+      wallet_id: expense.wallet_id,
+      category_id:
+        expense.category_id,
+      amount: expense.amount,
+      note: expense.note ?? "",
+      expense_date:
+        expense.expense_date,
     });
+  }, [expense, form]);
+  const onSubmit: SubmitHandler<
+  ExpenseFormValues
+> = async (values) => {
+  if (!expense) return;
+
+  try {
+    setLoading(true);
+
+    const { error } =
+      await expenseService.updateExpense(
+        expense.id,
+        {
+          wallet_id: values.wallet_id,
+          category_id:
+            values.category_id,
+          amount: values.amount,
+          note: values.note,
+          expense_date:
+            values.expense_date,
+        }
+      );
+
+    if (error) {
+      throw error;
+    }
+
+    await onSuccess();
 
     onOpenChange(false);
+  } catch (error) {
+    console.error(error);
+  } finally {
+    setLoading(false);
   }
+};
 
-  return (
-    <Dialog
-      open={open}
-      onOpenChange={onOpenChange}
-    >
-      <DialogContent className="sm:max-w-xl">
-        <DialogHeader>
-          <DialogTitle className="text-2xl">
-            Edit Expense
-          </DialogTitle>
-        </DialogHeader>
+return (
+  <Dialog
+    open={open}
+    onOpenChange={onOpenChange}
+  >
+    <DialogContent className="sm:max-w-2xl">
+      <DialogHeader>
+        <DialogTitle className="text-2xl font-bold">
+          Edit Expense
+        </DialogTitle>
+      </DialogHeader>
 
-        <div className="space-y-6">
+      <Form {...form}>
+        <form
+          onSubmit={form.handleSubmit(
+            onSubmit
+          )}
+          className="space-y-6"
+        >
+          <ExpenseForm
+            control={form.control}
+            watch={form.watch}
+            wallets={wallets}
+            categories={categories}
+          />
 
-          {/* Amount */}
-
-          <div>
-            <label className="mb-2 block text-sm font-medium">
-              Amount
-            </label>
-
-            <input
-              type="number"
-              value={amount}
-              onChange={(e) =>
-                setAmount(e.target.value)
-              }
-              className="w-full rounded-2xl border border-border bg-background p-4 text-2xl font-semibold outline-none focus:border-primary"
-            />
-          </div>
-
-          {/* Wallet */}
-
-          <div>
-            <label className="mb-2 block text-sm font-medium">
-              Wallet
-            </label>
-
-            <Select
-              value={walletId}
-              onValueChange={setWalletId}
-            >
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-
-              <SelectContent>
-                {wallets.map((wallet) => (
-                  <SelectItem
-                    key={wallet.id}
-                    value={wallet.id}
-                  >
-                    {wallet.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          {/* Category */}
-
-          <div>
-            <label className="mb-2 block text-sm font-medium">
-              Category
-            </label>
-
-            <Select
-              value={categoryId}
-              onValueChange={setCategoryId}
-            >
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-
-              <SelectContent>
-                {categories.map((category) => (
-                  <SelectItem
-                    key={category.id}
-                    value={category.id}
-                  >
-                    {category.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          {/* Date */}
-
-          <div>
-            <label className="mb-2 block text-sm font-medium">
-              Date
-            </label>
-
-            <input
-              type="date"
-              value={expenseDate}
-              onChange={(e) =>
-                setExpenseDate(e.target.value)
-              }
-              className="w-full rounded-xl border border-border bg-background p-3"
-            />
-          </div>
-
-          {/* Note */}
-
-          <div>
-            <label className="mb-2 block text-sm font-medium">
-              Notes
-            </label>
-
-            <textarea
-              rows={4}
-              value={note}
-              onChange={(e) =>
-                setNote(e.target.value)
-              }
-              placeholder="Add some notes..."
-              className="w-full rounded-2xl border border-border bg-background p-4 outline-none focus:border-primary"
-            />
-          </div>
-
-          {/* Buttons */}
-
-          <div className="flex gap-4">
+          <div className="flex justify-end gap-3 border-t pt-4">
             <button
+              type="button"
               onClick={() =>
                 onOpenChange(false)
               }
-              className="flex-1 rounded-xl border border-border py-3"
+              className="rounded-xl border border-border px-5 py-2 transition hover:bg-muted"
             >
               Cancel
             </button>
 
-            <button
-              disabled={loading}
-              onClick={handleSave}
-              className="flex-1 rounded-xl bg-primary py-3 font-semibold text-primary-foreground transition hover:opacity-90"
+            <SubmitButton
+              loading={loading}
             >
-              {loading
-                ? "Saving..."
-                : "Save Changes"}
-            </button>
+              Save Changes
+            </SubmitButton>
           </div>
-        </div>
-      </DialogContent>
-    </Dialog>
-  );
+        </form>
+      </Form>
+    </DialogContent>
+  </Dialog>
+);
 }

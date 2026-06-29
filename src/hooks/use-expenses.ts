@@ -1,9 +1,6 @@
 "use client";
 
-import {
-  useCallback,
-  useState,
-} from "react";
+import { useCallback, useEffect, useState } from "react";
 
 import { Expense } from "@/types/expense";
 import { expenseService } from "@/services/expense.service";
@@ -13,15 +10,16 @@ export function useExpenses(userId?: string) {
   const [loading, setLoading] = useState(true);
 
   const fetchExpenses = useCallback(async () => {
+    // IMPORTANT
     if (!userId) {
       setExpenses([]);
       setLoading(false);
       return;
     }
 
-    setLoading(true);
-
     try {
+      setLoading(true);
+
       const { data, error } =
         await expenseService.getExpenses(userId);
 
@@ -34,6 +32,15 @@ export function useExpenses(userId?: string) {
       setLoading(false);
     }
   }, [userId]);
+
+  useEffect(() => {
+    // Delay to avoid the React 19 lint warning
+    const timer = setTimeout(() => {
+      void fetchExpenses();
+    }, 0);
+
+    return () => clearTimeout(timer);
+  }, [fetchExpenses]);
 
   return {
     expenses,

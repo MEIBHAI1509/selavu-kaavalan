@@ -9,6 +9,7 @@ import {
   BarChart3,
   User,
   HandCoins,
+  Settings,
 } from "lucide-react";
 
 export const sidebarItems = [
@@ -62,4 +63,9 @@ export const sidebarItems = [
     href: "/profile",
     icon: User,
   },
+  {
+    title: "Settings",
+    href: "/settings",
+    icon: Settings,
+  }
 ];

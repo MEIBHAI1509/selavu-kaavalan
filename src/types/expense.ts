@@ -7,11 +7,9 @@ export interface Expense {
     note: string | null;
     expense_date: string;
     created_at: string;
-  
     wallets?: {
       name: string;
     };
-  
     categories?: {
       name: string;
       icon: string | null;

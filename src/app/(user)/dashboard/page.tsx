@@ -1,168 +1,135 @@
 "use client";
 
-import { useMemo } from "react";
-
 import { useUser } from "@/hooks/use-user";
-import { useWallets } from "@/hooks/use-wallets";
-import { useExpenses } from "@/hooks/use-expenses";
-import { useCategories } from "@/hooks/use-categories";
+import { useAnalytics } from "@/hooks/use-analytics";
+import { useRecurring } from "@/hooks/use-recurring";
 
-import StatsCards from "@/components/dashboard/stats-cards";
+import DashboardHeader from "@/components/dashboard/dashboard-header";
+import DashboardSummary from "@/components/dashboard/dashboard-summary";
+
+import BudgetProgress from "@/components/dashboard/budget-progress";
+import GoalProgress from "@/components/dashboard/goal-progress";
+
+import RecentTransactions from "@/components/dashboard/recent-transactions";
+import UpcomingRecurring from "@/components/dashboard/upcoming-recurring";
+import QuickActions from "@/components/dashboard/quick-actions";
+
+import IncomeExpenseChart from "@/components/analytics/income-expense-chart";
+import ExpenseCategoryChart from "@/components/analytics/expense-category-chart";
+import MonthlyTrendChart from "@/components/analytics/monthly-trend-chart";
+import WalletDistributionChart from "@/components/analytics/wallet-distribution-chart";
 
 export default function DashboardPage() {
-  const user = useUser();
+    const user = useUser();
 
-  const {
-    wallets,
-    loading: walletsLoading,
-  } = useWallets(user?.id);
+    const analytics =
+        useAnalytics(user?.id);
 
-  const {
-    expenses,
-    loading: expensesLoading,
-  } = useExpenses(user?.id);
+    const {
+        transactions,
+    } = useRecurring(user?.id);
 
-  const {
-    categories,
-    loading: categoriesLoading,
-  } = useCategories(user?.id);
+    if (!user) {
+        return (
+            <div className="flex h-[60vh] items-center justify-center">
+                Loading dashboard...
+            </div>
+        );
+    }
 
-  const loading =
-    walletsLoading ||
-    expensesLoading ||
-    categoriesLoading;
+    const totalBalance =
+        analytics.wallets.reduce(
+            (sum, wallet) =>
+                sum +
+                Number(wallet.balance),
+            0
+        );
 
-  const totalBalance = useMemo(
-    () =>
-      wallets.reduce(
-        (sum, wallet) =>
-          sum + Number(wallet.balance),
-        0
-      ),
-    [wallets]
-  );
-
-  const totalExpenses = useMemo(
-    () =>
-      expenses.reduce(
-        (sum, expense) =>
-          sum + Number(expense.amount),
-        0
-      ),
-    [expenses]
-  );
-
-  const walletCount = wallets.length;
-
-  const categoryCount =
-    categories.length;
-
-  if (!user) {
     return (
-      <div className="p-8">
-        Loading user...
-      </div>
-    );
-  }
+        <div className="space-y-8">
 
-  if (loading) {
-    return (
-      <div className="p-8">
-        Loading dashboard...
-      </div>
-    );
-  }
+            <DashboardHeader
+                user={user}
+            />
 
-  return (
-    <div className="space-y-8">
-      <div>
-        <h1 className="text-3xl font-bold">
-          Dashboard
-        </h1>
+            <DashboardSummary
+                balance={totalBalance}
+                income={
+                    analytics.summary
+                        .totalIncome
+                }
+                expense={
+                    analytics.summary
+                        .totalExpense
+                }
+            />
 
-        <p className="mt-1 text-muted-foreground">
-          Welcome back 👋
-        </p>
-      </div>
+            <div className="grid gap-8 xl:grid-cols-2">
 
-      <StatsCards
-        balance={totalBalance}
-        expenses={totalExpenses}
-        wallets={walletCount}
-      />
-      <div className="grid gap-6 lg:grid-cols-2">
-        <div className="rounded-3xl border bg-card p-6">
-          <h2 className="mb-4 text-xl font-bold">
-            Recent Statistics
-          </h2>
+                <IncomeExpenseChart
+                    data={
+                        analytics.incomeVsExpense
+                    }
+                />
 
-          <div className="space-y-3">
-            <div className="flex justify-between">
-              <span>Total Wallets</span>
+                <ExpenseCategoryChart
+                    data={
+                        analytics.expenseByCategory
+                    }
+                />
 
-              <span className="font-semibold">
-                {walletCount}
-              </span>
             </div>
 
-            <div className="flex justify-between">
-              <span>Categories</span>
+            <div className="grid gap-8 xl:grid-cols-2">
 
-              <span className="font-semibold">
-                {categoryCount}
-              </span>
+                <MonthlyTrendChart
+                    data={
+                        analytics.monthlyTrend
+                    }
+                />
+
+                <WalletDistributionChart
+                    data={
+                        analytics.walletDistribution
+                    }
+                />
+
             </div>
 
-            <div className="flex justify-between">
-              <span>Expenses</span>
+            <div className="grid gap-8 xl:grid-cols-2">
 
-              <span className="font-semibold">
-                {expenses.length}
-              </span>
+                <BudgetProgress
+                    budgets={
+                        analytics.budgets
+                    }
+                />
+
+                <GoalProgress
+                    goals={
+                        analytics.goals
+                    }
+                />
+
             </div>
-          </div>
+
+            <div className="grid gap-8 xl:grid-cols-2">
+
+                <RecentTransactions
+                    expenses={
+                        analytics.expenses
+                    }
+                />
+
+                <UpcomingRecurring
+                    transactions={
+                        transactions
+                    }
+                />
+
+            </div>
+
+            <QuickActions />
+
         </div>
-
-        <div className="rounded-3xl border bg-card p-6">
-          <h2 className="mb-4 text-xl font-bold">
-            Recent Expenses
-          </h2>
-
-          <div className="space-y-3">
-            {expenses
-              .slice(0, 5)
-              .map((expense) => (
-                <div
-                  key={expense.id}
-                  className="flex items-center justify-between"
-                >
-                  <div>
-                    <p className="font-medium">
-                      {
-                        expense.categories
-                          ?.name
-                      }
-                    </p>
-
-                    <p className="text-sm text-muted-foreground">
-                      {
-                        expense.wallets
-                          ?.name
-                      }
-                    </p>
-                  </div>
-
-                  <span className="font-semibold text-red-500">
-                    ₹
-                    {Number(
-                      expense.amount
-                    ).toLocaleString()}
-                  </span>
-                </div>
-              ))}
-          </div>
-        </div>
-      </div>
-    </div>
-  );
+    );
 }

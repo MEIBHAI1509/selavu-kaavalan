@@ -1,27 +1,28 @@
 "use client";
 
-import { Expense } from "@/types/expense";
+import { RecurringTransaction } from "@/types/recurring";
 
-import {
-    ArrowUpRight,
-} from "lucide-react";
+import { Repeat } from "lucide-react";
 
 interface Props {
-    expenses: Expense[];
+    transactions: RecurringTransaction[];
 }
 
-export default function RecentTransactions({
-    expenses,
+export default function UpcomingRecurring({
+    transactions,
 }: Props) {
-    const recent =
-        [...expenses]
+    const upcoming =
+        transactions
+            .filter(
+                (item) => item.is_active
+            )
             .sort(
                 (a, b) =>
                     new Date(
-                        b.expense_date
+                        a.next_due_date
                     ).getTime() -
                     new Date(
-                        a.expense_date
+                        b.next_due_date
                     ).getTime()
             )
             .slice(0, 5);
@@ -29,46 +30,45 @@ export default function RecentTransactions({
     return (
         <div className="rounded-3xl border bg-card p-6">
             <h2 className="mb-6 text-xl font-bold">
-                Recent Transactions
+                Upcoming Recurring
             </h2>
 
-            {recent.length === 0 ? (
+            {upcoming.length === 0 ? (
                 <div className="py-10 text-center text-muted-foreground">
-                    No transactions
+                    No recurring transactions
                 </div>
             ) : (
                 <div className="space-y-4">
-                    {recent.map((expense) => (
+                    {upcoming.map((item) => (
                         <div
-                            key={expense.id}
+                            key={item.id}
                             className="flex items-center justify-between rounded-xl border p-4"
                         >
                             <div className="flex items-center gap-3">
-                                <ArrowUpRight className="h-5 w-5 text-red-500" />
+                                <Repeat className="h-5 w-5 text-primary" />
 
                                 <div>
                                     <p className="font-medium">
-                                        {expense.categories?.name ??
-                                            "Expense"}
+                                        {item.title}
                                     </p>
 
-                                    <p className="text-sm text-muted-foreground">
-                                        {expense.wallets?.name}
+                                    <p className="text-sm capitalize text-muted-foreground">
+                                        {item.frequency}
                                     </p>
                                 </div>
                             </div>
 
                             <div className="text-right">
-                                <p className="font-semibold text-red-500">
+                                <p className="font-semibold">
                                     ₹
                                     {Number(
-                                        expense.amount
+                                        item.amount
                                     ).toLocaleString()}
                                 </p>
 
                                 <p className="text-xs text-muted-foreground">
                                     {new Date(
-                                        expense.expense_date
+                                        item.next_due_date
                                     ).toLocaleDateString()}
                                 </p>
                             </div>
